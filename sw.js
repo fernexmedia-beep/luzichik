@@ -1,5 +1,5 @@
 /* Çevrimdışı destek: önce ağdan dener, ağ yoksa son kaydedilen kopyayı verir. */
-const CACHE = "luzichik-v3";
+const CACHE = "luzichik-v4";
 const FILES = ["./", "index.html", "assets/style.css", "assets/app.js", "assets/i18n.js", "assets/config.js", "assets/icon.svg", "data/questions.js", "data/questions-2.js", "manifest.webmanifest"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

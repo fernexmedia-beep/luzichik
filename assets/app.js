@@ -386,6 +386,7 @@
   function render() {
     const r = route(), m = qMap();
     document.documentElement.lang = S.lang; document.documentElement.dataset.theme = S.theme;
+    document.getElementById("brand-sub").textContent = t("brandSub"); document.title = "Luzichik — " + t("brandSub");
     document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === S.lang));
     const items = [["", "navHome"], ["search", "navSearch"], ["fav", "navFav"], ["mistakes", "navMistakes"], ["stats", "navStats"], ["settings", "navSettings"], ["account", "navAccount"]];
     nav.innerHTML = items.map(([h, k]) => `<a href="#/${h}" ${(r[0] || "") === h ? 'aria-current="page"' : ""}>${t(k)}</a>`).join("");
