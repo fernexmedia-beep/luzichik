@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   const D = window.DUS_DATA, T = window.DUS_I18N, SB = window.DUS_BACKEND || null;
-  const VER = 10; /* version.txt ile aynı tutulur; büyürse açık sayfalar kendini yeniler */
+  const VER = 11; /* version.txt ile aynı tutulur; büyürse açık sayfalar kendini yeniler */
   const KEY = "dus.v1", LETTERS = "ABCDEFGH", SEC_PER_Q = 75, PAGE = 20;
   const defaults = { lang: "tr", theme: "light", ans: {}, fav: [], exams: [], streak: { last: null, count: 0, best: 0 }, custom: [], cbr: [], sess: null, synced: 0, days: {} };
 
