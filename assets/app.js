@@ -2,7 +2,7 @@
   "use strict";
   const D = window.DUS_DATA, T = window.DUS_I18N, SB = window.DUS_BACKEND || null;
   const KEY = "dus.v1", LETTERS = "ABCDEFGH", SEC_PER_Q = 75, PAGE = 20;
-  const defaults = { lang: "tr", theme: "light", ans: {}, fav: [], exams: [], streak: { last: null, count: 0, best: 0 }, custom: [], cbr: [], sess: null, synced: 0 };
+  const defaults = { lang: "tr", theme: "light", ans: {}, fav: [], exams: [], streak: { last: null, count: 0, best: 0 }, custom: [], cbr: [], sess: null, synced: 0, days: {} };
 
   let S;
   try { S = Object.assign({}, defaults, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { S = Object.assign({}, defaults); }
@@ -42,6 +42,8 @@
     const a = S.ans[id] || (S.ans[id] = { c: 0, w: 0, l: 0 });
     ok ? a.c++ : a.w++; a.l = ok ? 1 : 0;
     const today = ymd(new Date());
+    S.days[today] = (S.days[today] || 0) + 1;
+    const keys = Object.keys(S.days).sort(); while (keys.length > 60) delete S.days[keys.shift()];
     if (S.streak.last !== today) {
       const y = new Date(); y.setDate(y.getDate() - 1);
       S.streak.count = S.streak.last === ymd(y) ? S.streak.count + 1 : 1;
@@ -60,6 +62,21 @@
     return `<button class="star${on ? " on" : ""}" data-act="fav" data-id="${esc(id)}" aria-pressed="${on}" aria-label="${t(on ? "favRemove" : "favAdd")}" title="${t(on ? "favRemove" : "favAdd")}">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"/></svg></button>`;
   };
+  const ICONS = {
+    home: '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    star: '<path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"/>',
+    x: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/>',
+    chart: '<path d="M5 20V10m7 10V4m7 16v-7"/>',
+    set: '<path d="M4 7h10m4 0h2M4 17h2m4 0h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/>',
+    book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/>',
+    pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+  };
+  const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
+  const GOAL = 20, BLOCK = 10, HUES = [172, 212, 26, 262, 338, 140, 44, 300];
+  function lastDays(n) { const out = []; for (let i = n - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); out.push(d); } return out; }
   const bar = (v, cls = "") => `<span class="bar ${cls}"><i style="width:${v}%"></i></span>`;
   function meta(q) {
     const b = branch(q.branch), tp = b && b.topics.find((x) => x.id === q.topic);
@@ -90,20 +107,20 @@
   /* ---------- sayfalar ---------- */
   function home() {
     const all = allQ(), p = prog(all), seen = Object.values(S.ans), c = seen.reduce((s, a) => s + a.c, 0), w = seen.reduce((s, a) => s + a.w, 0);
-    const cards = branches().map((b) => {
+    const today = S.days[ymd(new Date())] || 0, loc = S.lang === "ru" ? "ru-RU" : "tr-TR";
+    const week = lastDays(7).map((d) => `<li class="${S.days[ymd(d)] ? "on" : ""}"><i></i><span>${esc(d.toLocaleDateString(loc, { weekday: "short" }).slice(0, 2))}</span></li>`).join("");
+    const cards = branches().map((b, i) => {
       const pb = prog(qOf(b.id));
-      return `<a class="card br" href="#/b/${b.id}"><span class="mono">${code(b)}</span>
-        <span class="br-b"><strong>${esc(L(b.name))}</strong><small>${pb.n} ${t("questions")} · ${pb.ok} ${t("learned")}</small>${bar(pct(pb.ok, pb.n))}</span></a>`;
+      return `<a class="card br" href="#/b/${b.id}" style="--h:${HUES[i % HUES.length]}"><span class="mono">${code(b)}</span>
+        <span class="br-b"><strong>${esc(L(b.name))}</strong><small>${pb.n} ${t("questions")} · ${pb.ok} ${t("learned")}</small>${bar(pct(pb.ok, pb.n))}</span><span class="chev" aria-hidden="true">›</span></a>`;
     }).join("");
     return `<section class="hero">
-        <div><h1>${t("heroTitle")}</h1><p>${t("heroSub")}</p>
-          <div class="row"><button class="btn primary" data-act="mix">${t("quickMix")}</button><button class="btn" data-act="setup">${t("quickExam")}</button></div></div>
-        <dl class="sheet">
-          <div><dt>${t("streak")}</dt><dd>${streakNow()}<small> ${t("days")}</small></dd></div>
-          <div><dt>${t("solved")}</dt><dd>${p.seen}<small> / ${p.n}</small></dd></div>
-          <div><dt>${t("accuracy")}</dt><dd>${pct(c, c + w)}<small> %</small></dd></div>
-        </dl>
+        <div class="hero-main"><p class="eyebrow">${t("tagline")}</p><h1>${t("heroTitle")}</h1><p>${t("heroSub")}</p>
+          <div class="row"><button class="btn light" data-act="mix">${t("quickMix")}</button><button class="btn ghost" data-act="setup">${t("quickExam")}</button></div></div>
+        <div class="goal"><div class="ring" style="--p:${Math.min(100, pct(today, GOAL))}"><b>${today}<small>/${GOAL}</small></b></div><span>${t("goalToday", GOAL)}</span></div>
       </section>
+      <section class="kpis"><div><b>${streakNow()}<small> ${t("days")}</small></b><span>${t("streak")}</span></div><div><b>${p.seen}<small>/${p.n}</small></b><span>${t("solved")}</span></div>
+        <div><b>${pct(c, c + w)}<small>%</small></b><span>${t("accuracy")}</span></div><ul class="week" aria-label="${t("week")}">${week}</ul></section>
       <h2>${t("branches")}</h2><div class="grid">${cards}</div>`;
   }
 
@@ -111,18 +128,23 @@
     const b = branch(id); if (!b) return home();
     const list = qOf(id), pb = prog(list), ms = mistakes(id).length;
     const modes = [
-      ["learn", "modeLearn", "modeLearnD", `href="#/learn/${id}"`, "a"],
-      ["train", "modeTrain", "modeTrainD", `data-act="train" data-b="${id}"`, "button"],
-      ["exam", "modeExam", "modeExamD", `data-act="setup" data-b="${id}"`, "button"],
-      ["mist", "modeMistakes", "modeMistakesD", `data-act="mist" data-b="${id}"`, "button"]
-    ].map(([k, n, d, attr, tag]) => `<${tag} class="card mode m-${k}" ${attr}><strong>${t(n)}${k === "mist" && ms ? ` <em>${ms}</em>` : ""}</strong><small>${t(d)}</small></${tag}>`).join("");
+      ["learn", "modeLearn", "modeLearnD", `href="#/learn/${id}"`, "a", "book"],
+      ["train", "modeTrain", "modeTrainD", `data-act="train" data-b="${id}"`, "button", "pen"],
+      ["exam", "modeExam", "modeExamD", `data-act="setup" data-b="${id}"`, "button", "clock"],
+      ["mist", "modeMistakes", "modeMistakesD", `data-act="mist" data-b="${id}"`, "button", "x"]
+    ].map(([k, n, d, attr, tag, i]) => `<${tag} class="card mode m-${k}" ${attr}><span class="ic-w">${ic(i)}</span><strong>${t(n)}${k === "mist" && ms ? ` <em>${ms}</em>` : ""}</strong><small>${t(d)}</small></${tag}>`).join("");
+    const blocks = [];
+    for (let i = 0; i < list.length; i += BLOCK) {
+      const part = list.slice(i, i + BLOCK), pp = prog(part);
+      blocks.push(`<button class="blk ${pp.ok === pp.n ? "done" : ""}" data-act="block" data-b="${id}" data-i="${i}"><b>${t("block", i / BLOCK + 1)}</b><small>${i + 1}–${i + part.length}</small>${bar(pct(pp.ok, pp.n))}<span>${pp.ok} / ${pp.n}</span></button>`);
+    }
     const topics = b.topics.map((tp) => {
-      const pt = prog(qOf(id, tp.id));
+      const pt = prog(qOf(id, tp.id)); if (!pt.n) return "";
       return `<li class="topic"><span class="topic-n"><strong>${esc(L(tp.name))}</strong><small>${pt.ok} / ${pt.n}</small>${bar(pct(pt.ok, pt.n))}</span>
         <span class="row"><a class="btn sm" href="#/learn/${id}/${tp.id}">${t("learn")}</a><button class="btn sm primary" data-act="train" data-b="${id}" data-t="${tp.id}">${t("solve")}</button></span></li>`;
     }).join("");
-    return pageHead(esc(L(b.name)), `${pb.n} ${t("questions")} · ${pb.ok} ${t("learned")}`, "#/") +
-      `<div class="grid modes">${modes}</div><h2>${t("topics")}</h2>` + (list.length ? `<ul class="topics">${topics}</ul>` : empty(t("noQuestions")));
+    return pageHead(esc(L(b.name)), `${pb.n} ${t("questions")} · ${pb.ok} ${t("learned")}`, "#/") + `<div class="grid modes">${modes}</div>` +
+      (list.length ? `<h2>${t("blocks")}</h2><div class="blks">${blocks.join("")}</div><h2>${t("topics")}</h2><ul class="topics">${topics}</ul>` : empty(t("noQuestions")));
   }
 
   function listPage(title, list, backHref, o = {}) {
@@ -159,6 +181,7 @@
 
   function settingsPage() {
     return pageHead(t("setTitle")) + `<div class="stack">
+      <section class="card set"><h3>${t("setTheme")}</h3><div class="row"><button class="btn ${S.theme === "dark" ? "" : "primary"}" data-act="theme" ${S.theme === "dark" ? "" : "disabled"}>${t("light")}</button><button class="btn ${S.theme === "dark" ? "primary" : ""}" data-act="theme" ${S.theme === "dark" ? "disabled" : ""}>${t("dark")}</button></div></section>
       <section class="card set"><h3>${t("setImport")}</h3><p>${t("setImportD")}</p><p class="count">${t("customCount", S.custom.length)}</p>
         <div class="row"><label class="btn primary">${t("chooseFile")}<input type="file" id="imp" accept=".json,application/json" hidden></label>
         <button class="btn" data-act="tpl">${t("template")}</button>${S.custom.length ? `<button class="btn danger" data-act="rmcustom">${t("removeCustom")}</button>` : ""}</div><p id="impmsg" class="count" role="status"></p></section>
@@ -223,6 +246,7 @@
       return `<details class="rev ${st}"><summary><b>${i + 1}</b><span>${esc(L(q.q))}</span><em>${t(st === "ok" ? "correct" : st === "bad" ? "wrong" : "empty")}</em></summary>${qCard(q, { pick: pk, reveal: true })}</details>`;
     }).join("");
     return pageHead(t("resultTitle"), t(last.mode === "exam" ? "modeExam" : "modeTrain")) +
+      (last.mode === "exam" ? `<p class="badge ${p >= 70 ? "ok" : "bad"}">${t(p >= 70 ? "passed" : "failed")} · ${t("passNote")}</p>` : "") +
       `<section class="result"><div class="ring" style="--p:${p}"><b>${p}<small>%</small></b></div>
         <dl class="sheet"><div><dt>${t("correct")}</dt><dd class="ok">${last.c}</dd></div><div><dt>${t("wrong")}</dt><dd class="bad">${w}</dd></div>
         <div><dt>${t("empty")}</dt><dd>${last.blank}</dd></div><div><dt>${t("time")}</dt><dd>${mmss(last.s)}</dd></div></dl></section>
@@ -311,12 +335,13 @@
     const rs = r.streak || {}, best = Math.max(S.streak.best || 0, rs.best || 0);
     if ((rs.last || "") > (S.streak.last || "") || (rs.last === S.streak.last && rs.count > S.streak.count)) S.streak = { last: rs.last, count: rs.count };
     S.streak.best = best;
+    Object.entries(r.days || {}).forEach(([d, n]) => { S.days[d] = Math.max(S.days[d] || 0, n); });
   }
   async function push() {
     if (!SB || !S.sess) return;
     try {
       await api("/rest/v1/progress?on_conflict=user_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify({ user_id: S.sess.uid, data: { ans: S.ans, fav: S.fav, exams: S.exams, streak: S.streak }, updated_at: new Date().toISOString() }) });
+        body: JSON.stringify({ user_id: S.sess.uid, data: { ans: S.ans, fav: S.fav, exams: S.exams, streak: S.streak, days: S.days }, updated_at: new Date().toISOString() }) });
       S.synced = Date.now(); syncErr = false; rawSave();
     } catch (e) { syncErr = true; }
     const el = document.getElementById("syncinfo"); if (el) el.textContent = syncText();
@@ -388,8 +413,8 @@
     document.documentElement.lang = S.lang; document.documentElement.dataset.theme = S.theme;
     document.getElementById("brand-sub").textContent = t("brandSub"); document.title = "Luzichik — " + t("brandSub");
     document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === S.lang));
-    const items = [["", "navHome"], ["search", "navSearch"], ["fav", "navFav"], ["mistakes", "navMistakes"], ["stats", "navStats"], ["settings", "navSettings"], ["account", "navAccount"]];
-    nav.innerHTML = items.map(([h, k]) => `<a href="#/${h}" ${(r[0] || "") === h ? 'aria-current="page"' : ""}>${t(k)}</a>`).join("");
+    const items = [["", "navHome", "home"], ["search", "navSearch", "search"], ["fav", "navFav", "star"], ["mistakes", "navMistakes", "x"], ["stats", "navStats", "chart"], ["settings", "navSettings", "set", 1], ["account", "navAccount", "user", 1]];
+    nav.innerHTML = items.map(([h, k, i, sec]) => `<a href="#/${h}" class="${sec ? "sec" : ""}" ${(r[0] || "") === h ? 'aria-current="page"' : ""}>${ic(i)}<span>${t(k)}</span></a>`).join("");
     document.body.classList.toggle("in-quiz", r[0] === "quiz");
     let html;
     switch (r[0]) {
@@ -424,6 +449,7 @@
       const on = i < 0; document.querySelectorAll(`.star[data-id="${CSS.escape(id)}"]`).forEach((s) => { s.classList.toggle("on", on); s.setAttribute("aria-pressed", on); }); },
     mix: () => startSession("train", shuffle(allQ()).slice(0, 20)),
     train: (el) => startSession("train", shuffle(qOf(el.dataset.b, el.dataset.t)), el.dataset.b),
+    block: (el) => startSession("train", qOf(el.dataset.b).slice(+el.dataset.i, +el.dataset.i + BLOCK), el.dataset.b),
     mist: (el) => { const l = mistakes(el.dataset.b); l.length ? startSession("train", shuffle(l), el.dataset.b) : (location.hash = "#/mistakes"); },
     solvefav: () => { const m = qMap(); startSession("train", shuffle(S.fav.map((id) => m[id]).filter(Boolean))); },
     setup: (el) => openSetup(el.dataset.b || ""),
@@ -443,9 +469,9 @@
     retry: () => { const l = last.qs.filter((q) => last.picks[q.id] !== q.answer); startSession("train", shuffle(l), last.b); },
     more: () => { shown += PAGE; render(); },
     tpl: () => download("dus-soru-sablonu.json", TEMPLATE),
-    export: () => download("dus-ilerleme.json", { ans: S.ans, fav: S.fav, exams: S.exams, streak: S.streak }),
+    export: () => download("dus-ilerleme.json", { ans: S.ans, fav: S.fav, exams: S.exams, streak: S.streak, days: S.days }),
     rmcustom: () => { if (confirm(t("removeCustom") + "?")) { S.custom = []; S.cbr = []; save(); render(); } },
-    reset: () => { if (confirm(t("resetQ"))) { S.ans = {}; S.fav = []; S.exams = []; S.streak = { last: null, count: 0, best: 0 }; save(); render(); } }
+    reset: () => { if (confirm(t("resetQ"))) { S.ans = {}; S.fav = []; S.exams = []; S.streak = { last: null, count: 0, best: 0 }; S.days = {}; save(); render(); } }
   };
   document.addEventListener("click", (e) => { const el = e.target.closest("[data-act]"); if (el && acts[el.dataset.act]) acts[el.dataset.act](el); });
   document.addEventListener("input", (e) => {

@@ -38,6 +38,7 @@ window.DUS_I18N = {
     errCred: "E-posta ya da şifre hatalı.", errConfirm: "Önce e-postana gelen bağlantıyla hesabını onayla.", errExists: "Bu e-posta ile bir hesap zaten var.",
     errWeak: "Şifre çok zayıf; en az 8 karakterli farklı bir şifre seç.", errRate: "Çok fazla deneme yapıldı. Biraz sonra yeniden dene.", errInput: "Geçerli bir e-posta ve en az 8 karakterli şifre gir.",
     errNet: "Sunucuya ulaşılamadı. İnternet bağlantını kontrol et.", errGeneric: "İşlem tamamlanamadı: {0}",
+    goalToday: "Bugünkü hedef: {0} soru", week: "Son 7 gün", blocks: "Bloklar", block: "Blok {0}", passed: "Geçti", failed: "Kaldı", passNote: "geçme sınırı %70",
     onlyTr: "Bu sorunun Rusça çevirisi henüz yok; Türkçe gösteriliyor."
   },
   ru: {
@@ -79,6 +80,7 @@ window.DUS_I18N = {
     errCred: "Неверная почта или пароль.", errConfirm: "Сначала подтвердите аккаунт по ссылке из письма.", errExists: "Аккаунт с этой почтой уже существует.",
     errWeak: "Пароль слишком простой; выберите другой, не короче 8 символов.", errRate: "Слишком много попыток. Повторите немного позже.", errInput: "Введите корректную почту и пароль не короче 8 символов.",
     errNet: "Сервер недоступен. Проверьте подключение к интернету.", errGeneric: "Не удалось выполнить действие: {0}",
+    goalToday: "Цель на сегодня: {0} вопросов", week: "Последние 7 дней", blocks: "Блоки", block: "Блок {0}", passed: "Сдано", failed: "Не сдано", passNote: "проходной балл 70 %",
     onlyTr: "Русского перевода этого вопроса пока нет — показан турецкий текст."
   }
 };
