@@ -1,6 +1,6 @@
 window.DUS_I18N = {
   tr: {
-    brand: "DUS Test", tagline: "Diş Hekimliğinde Uzmanlık Sınavı'na hazırlık",
+    brand: "Luzichik", tagline: "Diş Hekimliğinde Uzmanlık Sınavı'na hazırlık",
     navHome: "Ana sayfa", navSearch: "Arama", navFav: "Favoriler", navMistakes: "Hatalarım", navStats: "İstatistik", navSettings: "Ayarlar",
     heroTitle: "Bugün kaç soru çözeceksin?", heroSub: "Branş seç, konu konu çalış ya da süreli deneme sınavına gir.",
     streak: "Günlük seri", days: "gün", today: "Bugün", solved: "çözülen soru", accuracy: "Başarı",
@@ -41,7 +41,7 @@ window.DUS_I18N = {
     onlyTr: "Bu sorunun Rusça çevirisi henüz yok; Türkçe gösteriliyor."
   },
   ru: {
-    brand: "DUS Test", tagline: "Подготовка к экзамену DUS по стоматологии",
+    brand: "Luzichik", tagline: "Подготовка к экзамену DUS по стоматологии",
     navHome: "Главная", navSearch: "Поиск", navFav: "Избранное", navMistakes: "Мои ошибки", navStats: "Статистика", navSettings: "Настройки",
     heroTitle: "Сколько вопросов решим сегодня?", heroSub: "Выберите раздел, учите по темам или пройдите пробный экзамен на время.",
     streak: "Серия дней", days: "дн.", today: "Сегодня", solved: "решено вопросов", accuracy: "Точность",
