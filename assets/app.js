@@ -27,7 +27,7 @@
   function branches() {
     const m = new Map();
     D.branches.concat(S.cbr).forEach((b) => {
-      if (!m.has(b.id)) m.set(b.id, { id: b.id, code: b.code, name: b.name, topics: (b.topics || []).slice() });
+      if (!m.has(b.id)) m.set(b.id, { id: b.id, code: b.code, group: b.group || "klinik", name: b.name, topics: (b.topics || []).slice() });
       else (b.topics || []).forEach((tp) => { const x = m.get(b.id); if (!x.topics.some((y) => y.id === tp.id)) x.topics.push(tp); });
     });
     return [...m.values()];
@@ -109,11 +109,12 @@
     const all = allQ(), p = prog(all), seen = Object.values(S.ans), c = seen.reduce((s, a) => s + a.c, 0), w = seen.reduce((s, a) => s + a.w, 0);
     const today = S.days[ymd(new Date())] || 0, loc = S.lang === "ru" ? "ru-RU" : "tr-TR";
     const week = lastDays(7).map((d) => `<li class="${S.days[ymd(d)] ? "on" : ""}"><i></i><span>${esc(d.toLocaleDateString(loc, { weekday: "short" }).slice(0, 2))}</span></li>`).join("");
-    const cards = branches().map((b, i) => {
+    const card = (b, i) => {
       const pb = prog(qOf(b.id));
       return `<a class="card br" href="#/b/${b.id}" style="--h:${HUES[i % HUES.length]}"><span class="mono">${code(b)}</span>
         <span class="br-b"><strong>${esc(L(b.name))}</strong><small>${pb.n} ${t("questions")} · ${pb.ok} ${t("learned")}</small>${bar(pct(pb.ok, pb.n))}</span><span class="chev" aria-hidden="true">›</span></a>`;
-    }).join("");
+    };
+    const brs = branches(), grp = (g) => brs.map((b, i) => (b.group === g ? card(b, i) : "")).join("");
     return `<section class="hero">
         <div class="hero-main"><p class="eyebrow">${t("tagline")}</p><h1>${t("heroTitle")}</h1><p>${t("heroSub")}</p>
           <div class="row"><button class="btn light" data-act="mix">${t("quickMix")}</button><button class="btn ghost" data-act="setup">${t("quickExam")}</button></div></div>
@@ -121,7 +122,7 @@
       </section>
       <section class="kpis"><div><b>${streakNow()}<small> ${t("days")}</small></b><span>${t("streak")}</span></div><div><b>${p.seen}<small>/${p.n}</small></b><span>${t("solved")}</span></div>
         <div><b>${pct(c, c + w)}<small>%</small></b><span>${t("accuracy")}</span></div><ul class="week" aria-label="${t("week")}">${week}</ul></section>
-      <h2>${t("branches")}</h2><div class="grid">${cards}</div>`;
+      <h2>${t("groupKlinik")}</h2><div class="grid">${grp("klinik")}</div><h2>${t("groupTemel")}</h2><div class="grid">${grp("temel")}</div>`;
   }
 
   function branchPage(id) {
