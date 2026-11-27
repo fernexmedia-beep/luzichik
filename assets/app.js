@@ -1,6 +1,7 @@
 (function () {
   "use strict";
   const D = window.DUS_DATA, T = window.DUS_I18N, SB = window.DUS_BACKEND || null;
+  const VER = 10; /* version.txt ile aynı tutulur; büyürse açık sayfalar kendini yeniler */
   const KEY = "dus.v1", LETTERS = "ABCDEFGH", SEC_PER_Q = 75, PAGE = 20;
   const defaults = { lang: "tr", theme: "light", ans: {}, fav: [], exams: [], streak: { last: null, count: 0, best: 0 }, custom: [], cbr: [], sess: null, synced: 0, days: {} };
 
@@ -79,10 +80,11 @@
   const GOAL = 20, BLOCK = 10, HUES = [172, 212, 26, 262, 338, 140, 44, 300];
   function lastDays(n) { const out = []; for (let i = n - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); out.push(d); } return out; }
   /* ---------- sesli okuma (tarayıcının kendi konuşma motoru) ---------- */
-  const canSay = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  const canSay = !/[?&]nosay=1/.test(location.search) && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
   let sayId = null;
   if (canSay) { window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices(); }
-  const say = (id, rev) => (canSay ? `<button class="star say${sayId === id ? " on" : ""}" data-act="say" data-id="${esc(id)}" data-rev="${rev ? 1 : 0}" aria-label="${t("sayOn")}" title="${t("sayOn")}">${ic("vol")}</button>` : "");
+  const say = (id, rev) => (`<button class="star say${sayId === id ? " on" : ""}" data-act="say" data-id="${esc(id)}" data-rev="${rev ? 1 : 0}" aria-label="${t("sayOn")}" title="${t("sayOn")}">${ic("vol")}</button>`);
+  function toast(msg) { const d = document.createElement("div"); d.className = "toast"; d.setAttribute("role", "status"); d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), 4500); }
   const markSay = () => document.querySelectorAll(".say").forEach((b) => b.classList.toggle("on", b.dataset.id === sayId));
   function stopSay() { if (!canSay) return; sayId = null; window.speechSynthesis.cancel(); markSay(); }
   function startSay(id, withAnswer) {
@@ -207,7 +209,7 @@
         <div class="row"><label class="btn primary">${t("chooseFile")}<input type="file" id="imp" accept=".json,application/json" hidden></label>
         <button class="btn" data-act="tpl">${t("template")}</button>${S.custom.length ? `<button class="btn danger" data-act="rmcustom">${t("removeCustom")}</button>` : ""}</div><p id="impmsg" class="count" role="status"></p></section>
       <section class="card set"><h3>${t("setReset")}</h3><p>${t("setResetD")}</p>
-        <div class="row"><button class="btn" data-act="export">${t("exportP")}</button><button class="btn danger" data-act="reset">${t("reset")}</button></div></section></div>`;
+        <div class="row"><button class="btn" data-act="export">${t("exportP")}</button><button class="btn danger" data-act="reset">${t("reset")}</button></div></section></div><p class="count ver">${t("version", VER)}</p>`;
   }
 
   /* ---------- oturum (alıştırma / sınav) ---------- */
@@ -465,7 +467,7 @@
   /* ---------- olaylar ---------- */
   const acts = {
     signup: () => authActs.signup(), forgot: () => authActs.forgot(), syncnow: () => authActs.syncnow(), logout: () => authActs.logout(),
-    say: (el) => { const id = el.dataset.id; if (sayId === id) return stopSay(); stopSay(); startSay(id, el.dataset.rev === "1"); },
+    say: (el) => { if (!canSay) return toast(t("sayNo")); const id = el.dataset.id; if (sayId === id) return stopSay(); stopSay(); startSay(id, el.dataset.rev === "1"); },
     lang: (el) => { stopSay(); S.lang = el.dataset.v; save(); render(); },
     theme: () => { S.theme = S.theme === "dark" ? "light" : "dark"; save(); render(); },
     fav: (el) => { const id = el.dataset.id, i = S.fav.indexOf(id); i < 0 ? S.fav.push(id) : S.fav.splice(i, 1); save();
@@ -514,5 +516,10 @@
 
   authCallback(); prevRoute = location.hash; render();
   if (SB && S.sess) pull().then(render).catch(() => {});
+  /* Yeni sürüm yayınlandıysa sayfayı bir kez yenile (sunucu sayfayı 10 dakika önbellekte tutturuyor) */
+  if (/^https?:$/.test(location.protocol)) fetch("version.txt?" + Date.now(), { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).then((v) => {
+    v = v.trim(); let seen = null; try { seen = sessionStorage.getItem("lz.ver"); } catch (e) { return; }
+    if (+v > VER && seen !== v) { sessionStorage.setItem("lz.ver", v); location.replace(location.pathname + "?v=" + v + location.hash); }
+  }).catch(() => {});
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();

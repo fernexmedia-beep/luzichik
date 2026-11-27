@@ -163,8 +163,9 @@ a.card:active, button.card:active { transform: scale(.985); }
 .star path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linejoin: round; }
 .star.on path { fill: var(--gold); stroke: var(--gold); }
 .q-acts { display: flex; flex: none; margin: -.3rem -.4rem 0 0; } .q-acts .star { margin: 0; }
+.say { background: var(--tint); margin-right: .35rem !important; } .say path { stroke: var(--brand) !important; stroke-width: 2; }
 .say svg { width: 21px; height: 21px; }
-.say.on { background: var(--tint); } .say.on path { fill: none; stroke: var(--brand); stroke-width: 2.2; }
+.say.on { background: var(--brand); } .say.on path { fill: none; stroke: var(--brand-ink) !important; stroke-width: 2.2; }
 .say.on svg { animation: say-pulse 1s ease-in-out infinite; }
 @keyframes say-pulse { 50% { transform: scale(1.15); } }
 .opts { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
@@ -298,3 +299,9 @@ dialog::backdrop { background: rgba(10, 20, 22, .55); }
   #splash { transition: opacity .25s; clip-path: none; } #splash.out { opacity: 0; clip-path: none; }
   .sp-dots i, .sp-word span, .sp-line, .sp-sub { animation: none; transform: none; opacity: 1; } .sp-dots i:nth-child(2) { background: #fff; }
 }
+
+/* kısa bildirim */
+.toast { position: fixed; left: 50%; bottom: calc(var(--navh) + 1.2rem + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 60; width: max-content; max-width: calc(100vw - 2rem);
+  background: var(--ink); color: var(--paper); padding: .75rem 1rem; border-radius: 14px; font-size: .92rem; line-height: 1.4; box-shadow: 0 16px 40px -16px rgba(0, 0, 0, .6); animation: toast-in .25s ease-out; }
+@keyframes toast-in { from { transform: translate(-50%, 10px); } }
+.ver { text-align: center; margin-top: 1.2rem; }
