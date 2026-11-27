@@ -72,11 +72,31 @@
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/>',
     book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/>',
     pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
-    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    vol: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>'
   };
   const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
   const GOAL = 20, BLOCK = 10, HUES = [172, 212, 26, 262, 338, 140, 44, 300];
   function lastDays(n) { const out = []; for (let i = n - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); out.push(d); } return out; }
+  /* ---------- sesli okuma (tarayıcının kendi konuşma motoru) ---------- */
+  const canSay = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  let sayId = null;
+  if (canSay) { window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices(); }
+  const say = (id, rev) => (canSay ? `<button class="star say${sayId === id ? " on" : ""}" data-act="say" data-id="${esc(id)}" data-rev="${rev ? 1 : 0}" aria-label="${t("sayOn")}" title="${t("sayOn")}">${ic("vol")}</button>` : "");
+  const markSay = () => document.querySelectorAll(".say").forEach((b) => b.classList.toggle("on", b.dataset.id === sayId));
+  function stopSay() { if (!canSay) return; sayId = null; window.speechSynthesis.cancel(); markSay(); }
+  function startSay(id, withAnswer) {
+    const q = qMap()[id]; if (!q) return;
+    const clean = (x) => String(x).replace(/\s*\n+\s*/g, " ").trim();
+    const stem = clean(L(q.q));
+    let text = stem + (/[.?!:]$/.test(stem) ? " " : ". ") + q.options.map((op, i) => LETTERS[i] + ". " + L(op)).join(". ") + ".";
+    if (withAnswer) text += " " + t("answer") + ": " + LETTERS[q.answer] + ". " + clean(L(q.exp));
+    const lang = S.lang === "ru" ? "ru-RU" : "tr-TR", u = new SpeechSynthesisUtterance(text);
+    const v = window.speechSynthesis.getVoices().find((x) => x.lang.replace("_", "-").toLowerCase().startsWith(lang.slice(0, 2)));
+    u.lang = lang; if (v) u.voice = v; u.rate = 0.95;
+    u.onend = u.onerror = () => { if (sayId === id) { sayId = null; markSay(); } };
+    sayId = id; markSay(); window.speechSynthesis.speak(u);
+  }
   const bar = (v, cls = "") => `<span class="bar ${cls}"><i style="width:${v}%"></i></span>`;
   function meta(q) {
     const b = branch(q.branch), tp = b && b.topics.find((x) => x.id === q.topic);
@@ -95,7 +115,7 @@
     }).join("");
     const exp = o.reveal && L(q.exp) ? `<div class="exp"><b>${t("explanation")}</b><p>${esc(L(q.exp))}</p></div>` : "";
     return `<article class="q">
-      <div class="q-head"><span class="q-meta">${o.num ? `<b class="q-num">${o.num}</b>` : ""}${meta(q)}</span>${star(q.id)}</div>
+      <div class="q-head"><span class="q-meta">${o.num ? `<b class="q-num">${o.num}</b>` : ""}${meta(q)}</span><span class="q-acts">${say(q.id, o.reveal)}${star(q.id)}</span></div>
       ${missingRu(q) ? `<p class="note">${t("onlyTr")}</p>` : ""}
       <p class="q-text">${esc(L(q.q))}</p>
       ${q.image ? `<img class="q-img" src="${esc(q.image)}" alt="">` : ""}
@@ -435,6 +455,7 @@
   }
   let prevRoute = "";
   window.addEventListener("hashchange", () => {
+    stopSay();
     const now = location.hash;
     if (ses && route()[0] !== "quiz") { ses = null; clearInterval(timer); }
     if (now !== prevRoute) { shown = PAGE; window.scrollTo(0, 0); }
@@ -444,7 +465,8 @@
   /* ---------- olaylar ---------- */
   const acts = {
     signup: () => authActs.signup(), forgot: () => authActs.forgot(), syncnow: () => authActs.syncnow(), logout: () => authActs.logout(),
-    lang: (el) => { S.lang = el.dataset.v; save(); render(); },
+    say: (el) => { const id = el.dataset.id; if (sayId === id) return stopSay(); stopSay(); startSay(id, el.dataset.rev === "1"); },
+    lang: (el) => { stopSay(); S.lang = el.dataset.v; save(); render(); },
     theme: () => { S.theme = S.theme === "dark" ? "light" : "dark"; save(); render(); },
     fav: (el) => { const id = el.dataset.id, i = S.fav.indexOf(id); i < 0 ? S.fav.push(id) : S.fav.splice(i, 1); save();
       const on = i < 0; document.querySelectorAll(`.star[data-id="${CSS.escape(id)}"]`).forEach((s) => { s.classList.toggle("on", on); s.setAttribute("aria-pressed", on); }); },
@@ -462,9 +484,9 @@
       else { if (ses.picks[q.id] != null) return; ses.picks[q.id] = i; record(q.id, i === q.answer); }
       render();
     },
-    nextq: () => { if (ses && ses.i < ses.qs.length - 1) { ses.i++; render(); window.scrollTo(0, 0); } },
-    prevq: () => { if (ses && ses.i > 0) { ses.i--; render(); window.scrollTo(0, 0); } },
-    goto: (el) => { ses.i = +el.dataset.i; render(); window.scrollTo(0, 0); },
+    nextq: () => { stopSay(); if (ses && ses.i < ses.qs.length - 1) { ses.i++; render(); window.scrollTo(0, 0); } },
+    prevq: () => { stopSay(); if (ses && ses.i > 0) { ses.i--; render(); window.scrollTo(0, 0); } },
+    goto: (el) => { stopSay(); ses.i = +el.dataset.i; render(); window.scrollTo(0, 0); },
     finish: () => finish(false),
     quit: () => { if (confirm(t("quitQ"))) { const b = ses && ses.b; ses = null; clearInterval(timer); location.hash = b ? "#/b/" + b : "#/"; } },
     retry: () => { const l = last.qs.filter((q) => last.picks[q.id] !== q.answer); startSession("train", shuffle(l), last.b); },

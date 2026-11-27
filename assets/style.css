@@ -162,6 +162,11 @@ a.card:active, button.card:active { transform: scale(.985); }
 .star { border: 0; background: none; width: 40px; height: 40px; margin: -.3rem -.4rem 0 0; display: grid; place-items: center; cursor: pointer; flex: none; border-radius: 50%; }
 .star path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linejoin: round; }
 .star.on path { fill: var(--gold); stroke: var(--gold); }
+.q-acts { display: flex; flex: none; margin: -.3rem -.4rem 0 0; } .q-acts .star { margin: 0; }
+.say svg { width: 21px; height: 21px; }
+.say.on { background: var(--tint); } .say.on path { fill: none; stroke: var(--brand); stroke-width: 2.2; }
+.say.on svg { animation: say-pulse 1s ease-in-out infinite; }
+@keyframes say-pulse { 50% { transform: scale(1.15); } }
 .opts { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
 .opt { width: 100%; min-height: 54px; display: flex; align-items: center; gap: .8rem; text-align: left; padding: .65rem .8rem; border-radius: 14px; border: 1.5px solid var(--line); background: transparent; line-height: 1.35; }
 button.opt { cursor: pointer; transition: border-color .12s, background .12s, transform .1s; }
